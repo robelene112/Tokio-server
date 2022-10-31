@@ -1,6 +1,6 @@
 #![allow(unused_imports, unused_variables, dead_code)]
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpListener;
+use tokio::net::{TcpListener, TcpStream};
 
 const ECHO_SERVER_ADDRESS: &str = "127.0.0.1:8000";
 
@@ -13,9 +13,11 @@ async fn main() {
 
         loop {
             match listener.accept().await {
-                Ok((stream, socketaddress)) => {
+                Ok((mut stream, socketaddress)) => {
                     println!("Found new client on Ip: {}", socketaddress.ip());
                     println!("Connected on port: {}", socketaddress.port());
+
+                    handle_connection(&mut stream).await;
                 }
                 Err(e) => {
                     println!("Could not recieve client {}", e)
@@ -25,4 +27,11 @@ async fn main() {
     } else {
         println!("Failed to bind server on {}", ECHO_SERVER_ADDRESS)
     }
+}
+
+async fn handle_connection(stream: &mut TcpStream) {
+    let mut buffer = [0; 1024];
+    let _ = stream.read(&mut buffer).await;
+    let message = String::from_utf8_lossy(&buffer);
+    println!("{}", message);
 }
